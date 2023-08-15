@@ -14671,7 +14671,14 @@ function Babel.arabic.justify_hlist(head, line, gc, size, pack)
       k_item = k_list[k_curr].node
       if k_list[k_curr].weight == Babel.kashida_wts[wt_pos] then       
         d = node.copy(k_item)
-        d.char = 0x0640
+        if (node.is_char(d)) then
+          d.char = 0x0640
+        else
+          d.char = 0x0640
+          % reset shift remaining from preceding diacritic
+          d.yoffset = 0
+          d.xoffset = 0
+        end
         line.head, new = node.insert_after(line.head, k_item, d)
         width_new = node.dimensions(line.head)
         if width > goal or width == width_new then
