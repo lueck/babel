@@ -14563,6 +14563,7 @@ Babel.arabic.justify_factor = 0.95
 Babel.arabic.justify_enabled = true
 Babel.arabic.kashida_limit = -1
 Babel.arabic.kashida_after_diacritics = true
+Babel.arabic.verbose = false
 
 Babel.arabic.DIACRITICS = {}
 for i = 0x064b,0x065f do Babel.arabic.DIACRITICS[i] = true end
@@ -14688,7 +14689,10 @@ function Babel.arabic.justify_hlist(head, line, gc, size, pack)
         d = node.copy(k_item)
         if (Babel.arabic.kashida_after_diacritics and Babel.arabic.is_diacritic(d)) then
           % copy the preceding non-diacritic character in order to get the right x and y shift for the kashida from it
-	  d = node.copy(k_list[k_curr].non_diacritic or k_item)
+          d = node.copy(k_list[k_curr].non_diacritic or k_item)
+        end
+        if Babel.arabic.verbose then
+          tex.sprint("\\message{babel: inserting kashida after unicode codepoint (decimal) ", d.char, string.char(10), "}")
         end
         d.char = 0x0640
         line.head, new = node.insert_after(line.head, k_item, d)
