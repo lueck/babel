@@ -14591,6 +14591,11 @@ function Babel.arabic.justify_hbox(head, gc, size, pack)
 end
 
 function Babel.arabic.is_diacritic(node)
+  if node.char >= 0xf0000 and node.char <= 0xffffd then
+    % some FONTS use codepoints from PUA, e.g. FreeSerif uses 0xf0731
+    % we can treat them as diacritics, i.e. step over them
+    return true
+  end
   return Babel.arabic.diacritics[node.char]
 end
 
