@@ -14562,6 +14562,7 @@ Babel.arabic.dest = {}
 Babel.arabic.justify_factor = 0.95
 Babel.arabic.justify_enabled = true
 Babel.arabic.kashida_limit = -1
+Babel.arabic.kashida_after_diacritics = true
 
 Babel.arabic.DIACRITICS = {}
 for i = 0x064b,0x065f do Babel.arabic.DIACRITICS[i] = true end
@@ -14619,16 +14620,22 @@ function Babel.arabic.justify_hlist(head, line, gc, size, pack)
     elongs = {}     % Stores elongated candidates of each line
     k_list = {}     % And all letters with kashida
     pos_inline = 0  % Not yet used
+    local non_diacritic = nil
 
     for n in node.traverse_id(GLYPH, line.head) do
       pos_inline = pos_inline + 1 % To find where it is. Not used.
+
+      % keep track of last non-diacritic character
+      if (not Babel.arabic.is_diacritic(n)) then
+        non_diacritic = n
+      end
 
       % Elongated glyphs
       if elong_map then
         local locale = node.get_attribute(n, LOCALE)
         if elong_map[locale] and elong_map[locale][n.font] and 
             elong_map[locale][n.font][n.char] then
-          table.insert(elongs, {node = n, locale = locale} )
+          table.insert(elongs, {node = n, locale = locale, non_diacritic = non_diacritic} )
           node.set_attribute(n.prev, KASHIDA, 0)
         end
       end
@@ -14637,7 +14644,7 @@ function Babel.arabic.justify_hlist(head, line, gc, size, pack)
       if Babel.kashida_wts then
         local k_wt = node.get_attribute(n, KASHIDA)
         if k_wt > 0 then % todo. parameter for multi inserts
-          table.insert(k_list, {node = n, weight = k_wt, pos = pos_inline})
+          table.insert(k_list, {node = n, weight = k_wt, pos = pos_inline, non_diacritic = non_diacritic})
         end
       end
 
@@ -14679,14 +14686,11 @@ function Babel.arabic.justify_hlist(head, line, gc, size, pack)
       k_item = k_list[k_curr].node
       if k_list[k_curr].weight == Babel.kashida_wts[wt_pos] then       
         d = node.copy(k_item)
-        if (node.is_char(d)) then
-          d.char = 0x0640
-        else
-          d.char = 0x0640
-          % reset shift remaining from preceding diacritic
-          d.yoffset = 0
-          d.xoffset = 0
+        if (Babel.arabic.kashida_after_diacritics and Babel.arabic.is_diacritic(d)) then
+          % copy the preceding non-diacritic character in order to get the right x and y shift for the kashida from it
+	  d = node.copy(k_list[k_curr].non_diacritic or k_item)
         end
+        d.char = 0x0640
         line.head, new = node.insert_after(line.head, k_item, d)
         width_new = node.dimensions(line.head)
         if width > goal or width == width_new then
