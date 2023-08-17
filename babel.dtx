@@ -14563,6 +14563,10 @@ Babel.arabic.justify_factor = 0.95
 Babel.arabic.justify_enabled = true
 Babel.arabic.kashida_limit = -1
 
+Babel.arabic.DIACRITICS = {}
+for i = 0x064b,0x065f do Babel.arabic.DIACRITICS[i] = true end
+Babel.arabic.diacritics = Babel.arabic.diacritics or Babel.arabic.DIACRITICS
+
 function Babel.arabic.justify(head)
   if not Babel.arabic.justify_enabled then return head end
   for line in node.traverse_id(node.id'hlist', head) do
@@ -14582,6 +14586,10 @@ function Babel.arabic.justify_hbox(head, gc, size, pack)
     end
   end
   return head
+end
+
+function Babel.arabic.is_diacritic(node)
+  return Babel.arabic.diacritics[node.char]
 end
 
 function Babel.arabic.justify_hlist(head, line, gc, size, pack)
