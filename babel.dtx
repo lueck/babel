@@ -14562,6 +14562,7 @@ Babel.arabic.dest = {}
 Babel.arabic.justify_factor = 0.95
 Babel.arabic.justify_enabled = true
 Babel.arabic.kashida_limit = -1
+Babel.arabic.kashida_after_ligature_allowed = false
 
 function Babel.arabic.justify(head)
   if not Babel.arabic.justify_enabled then return head end
@@ -14613,7 +14614,11 @@ function Babel.arabic.justify_hlist(head, line, gc, size, pack)
     pos_inline = 0  % Not yet used
 
     for n in node.traverse_id(GLYPH, line.head) do
+      local passes_ligature_test
       pos_inline = pos_inline + 1 % To find where it is. Not used.
+
+      % ligatures (may) cause deferral of kashidas
+      passes_ligature_test = Babel.arabic.kashida_after_ligature_allowed or n.subtype & 2 ~= 2
 
       % Elongated glyphs
       if elong_map then
@@ -14628,7 +14633,8 @@ function Babel.arabic.justify_hlist(head, line, gc, size, pack)
       % Tatwil
       if Babel.kashida_wts then
         local k_wt = node.get_attribute(n, KASHIDA)
-        if k_wt > 0 then % todo. parameter for multi inserts
+        % ligatures (may) cause deferral of the kashida by one or more characters
+        if k_wt > 0 and passes_ligature_test then % todo. parameter for multi inserts
           table.insert(k_list, {node = n, weight = k_wt, pos = pos_inline})
         end
       end
